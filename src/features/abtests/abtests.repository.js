@@ -56,6 +56,14 @@ async function update(id, { name, active, dateStart, dateEnd, variantsCount }) {
   return toAbtest(row);
 }
 
+async function activate(id) {
+  const [row] = await db(TABLE)
+    .where({ id, active: false })
+    .update({ active: true, updated_at: db.fn.now() })
+    .returning('*');
+  return toAbtest(row);
+}
+
 async function remove(id) {
   const count = await db(TABLE).where({ id }).del();
   return count > 0;
@@ -82,4 +90,13 @@ async function assignVariant(abTestId, userId, variantsCount) {
   });
 }
 
-module.exports = { findAll, findById, create, update, remove, findVariant, assignVariant };
+module.exports = {
+  findAll,
+  findById,
+  create,
+  update,
+  activate,
+  remove,
+  findVariant,
+  assignVariant,
+};

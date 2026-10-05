@@ -11,6 +11,15 @@ async function create(data) {
   return abtestsRepository.create(data);
 }
 
+async function activate(abTestId) {
+  const activated = await abtestsRepository.activate(abTestId);
+  if (activated) return activated;
+
+  const abtest = await abtestsRepository.findById(abTestId);
+  if (!abtest) throw new NotFoundError('A/B test not found');
+  return abtest;
+}
+
 function isRunning(abtest, now = new Date()) {
   return abtest.active && now >= abtest.dateStart && now <= abtest.dateEnd;
 }
@@ -28,4 +37,4 @@ async function getVariant(abTestId, userId) {
   return { variant };
 }
 
-module.exports = { list, create, getVariant };
+module.exports = { list, create, activate, getVariant };
