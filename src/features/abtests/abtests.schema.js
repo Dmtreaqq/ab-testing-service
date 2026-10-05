@@ -3,7 +3,6 @@ const { z } = require('zod');
 const abtestBodySchema = z
   .object({
     name: z.string().trim().min(1).max(255),
-    active: z.boolean().default(false),
     dateStart: z.iso.datetime({ offset: true }),
     dateEnd: z.iso.datetime({ offset: true }),
     variantsCount: z.number().int().min(2).max(3),

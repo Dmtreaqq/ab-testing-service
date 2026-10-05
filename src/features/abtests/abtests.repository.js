@@ -59,9 +59,32 @@ async function update(id, { name, active, dateStart, dateEnd, variantsCount }) {
 async function activate(id) {
   const [row] = await db(TABLE)
     .where({ id, active: false })
+    .where('date_end', '>', db.fn.now())
     .update({ active: true, updated_at: db.fn.now() })
     .returning('*');
   return toAbtest(row);
+}
+
+async function deactivate(id) {
+  const [row] = await db(TABLE)
+    .where({ id, active: true })
+    .update({ active: false, updated_at: db.fn.now() })
+    .returning('*');
+  return toAbtest(row);
+}
+
+async function findNotEnded() {
+  const rows = await db(TABLE).where('date_end', '>', db.fn.now()).orderBy('date_start', 'asc');
+  return rows.map(toAbtest);
+}
+
+async function deactivateEnded() {
+  const rows = await db(TABLE)
+    .where({ active: true })
+    .where('date_end', '<=', db.fn.now())
+    .update({ active: false, updated_at: db.fn.now() })
+    .returning('*');
+  return rows.map(toAbtest);
 }
 
 async function remove(id) {
@@ -96,6 +119,9 @@ module.exports = {
   create,
   update,
   activate,
+  deactivate,
+  findNotEnded,
+  deactivateEnded,
   remove,
   findVariant,
   assignVariant,

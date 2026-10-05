@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "worker": "node src/worker.js",
+    "worker:dev": "nodemon src/worker.js",
     "lint": "eslint .",
     "migrate": "knex migrate:latest",
     "migrate:make": "knex migrate:make",
@@ -20,7 +22,9 @@
     "@koa/bodyparser": "^6.1.0",
     "@koa/cors": "^5.0.0",
     "@koa/router": "^15.7.0",
+    "bullmq": "^6.3.11",
     "dotenv": "^18.0.5",
+    "ioredis": "^6.0.0",
     "knex": "^3.3.0",
     "koa": "^3.2.1",
     "pg": "^8.23.1",

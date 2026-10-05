@@ -2,12 +2,18 @@ const createApp = require('./app');
 const config = require('./config');
 const db = require('./db/knex');
 const logger = require('./lib/logger');
+const abtestsQueue = require('./queues/abtests.queue');
 
 const app = createApp();
 
 const server = app.listen(config.port, () => {
   logger.info(`Server listening on http://localhost:${config.port}`);
 });
+
+abtestsQueue.waitUntilReady().then(
+  () => logger.info(`Connected to Redis at ${config.redis.host}:${config.redis.port}`),
+  (err) => logger.error({ err }, 'Failed to connect to Redis'),
+);
 
 let shuttingDown = false;
 
@@ -25,11 +31,12 @@ async function shutdown(signal) {
   server.close(async (err) => {
     if (err) logger.error({ err }, 'Error closing HTTP server');
     try {
+      await abtestsQueue.close();
       await db.destroy();
-      logger.info('Database connections closed');
+      logger.info('Queue and database connections closed');
       process.exit(err ? 1 : 0);
-    } catch (dbErr) {
-      logger.error({ err: dbErr }, 'Error closing database connections');
+    } catch (closeErr) {
+      logger.error({ err: closeErr }, 'Error closing queue and database connections');
       process.exit(1);
     }
   });

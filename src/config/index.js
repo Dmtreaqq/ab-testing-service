@@ -11,4 +11,12 @@ module.exports = {
     password: process.env.DB_PASSWORD,
     name: process.env.DB_NAME,
   },
+  redis: {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: Number(process.env.REDIS_PORT) || 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+  },
+  worker: {
+    concurrency: Number(process.env.WORKER_CONCURRENCY) || 5,
+  },
 };

@@ -1,5 +1,7 @@
 const abtestsRepository = require('./abtests.repository');
+const abtestsQueue = require('../../queues/abtests.queue');
 const { NotFoundError } = require('../../lib/errors');
+const logger = require('../../lib/logger');
 
 const INACTIVE_VARIANT = 0;
 
@@ -8,7 +10,15 @@ async function list() {
 }
 
 async function create(data) {
-  return abtestsRepository.create(data);
+  const abtest = await abtestsRepository.create({ ...data, active: false });
+
+  try {
+    await abtestsQueue.scheduleAbtest(abtest);
+  } catch (err) {
+    logger.error({ err, abTestId: abtest.id }, 'Failed to schedule abtest jobs');
+  }
+
+  return abtest;
 }
 
 async function activate(abTestId) {
@@ -18,6 +28,27 @@ async function activate(abTestId) {
   const abtest = await abtestsRepository.findById(abTestId);
   if (!abtest) throw new NotFoundError('A/B test not found');
   return abtest;
+}
+
+async function deactivate(abTestId) {
+  const deactivated = await abtestsRepository.deactivate(abTestId);
+  if (deactivated) return deactivated;
+
+  const abtest = await abtestsRepository.findById(abTestId);
+  if (!abtest) throw new NotFoundError('A/B test not found');
+  return abtest;
+}
+
+async function reconcileSchedules() {
+  const deactivated = await abtestsRepository.deactivateEnded();
+  const abtests = await abtestsRepository.findNotEnded();
+
+  const scheduled = [];
+  for (const abtest of abtests) {
+    scheduled.push({ abTestId: abtest.id, ...(await abtestsQueue.ensureAbtestJobs(abtest)) });
+  }
+
+  return { deactivated: deactivated.map((abtest) => abtest.id), scheduled };
 }
 
 function isRunning(abtest, now = new Date()) {
@@ -37,4 +68,4 @@ async function getVariant(abTestId, userId) {
   return { variant };
 }
 
-module.exports = { list, create, activate, getVariant };
+module.exports = { list, create, activate, deactivate, reconcileSchedules, getVariant };
