@@ -1,0 +1,37 @@
+{
+  "name": "ab-testing-service",
+  "version": "1.0.0",
+  "description": "A/B testing service API (Koa + Knex + Postgres)",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "lint": "eslint .",
+    "migrate": "knex migrate:latest",
+    "migrate:make": "knex migrate:make",
+    "migrate:rollback": "knex migrate:rollback",
+    "seed": "knex seed:run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@koa/bodyparser": "^6.1.0",
+    "@koa/cors": "^5.0.0",
+    "@koa/router": "^15.7.0",
+    "dotenv": "^18.0.5",
+    "knex": "^3.3.0",
+    "koa": "^3.2.1",
+    "pg": "^8.23.1",
+    "pino": "^10.4.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "nodemon": "^3.1.14",
+    "pino-pretty": "^13.2.0"
+  }
+}
