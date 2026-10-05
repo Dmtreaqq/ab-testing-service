@@ -1,3 +1,17 @@
+x-app: &app
+  build: .
+  image: ab-testing-service
+  env_file: .env
+  environment:
+    NODE_ENV: production
+    PORT: 3000
+    DB_HOST: postgres
+    DB_PORT: 5432
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+  networks:
+    - ab-testing
+
 services:
   postgres:
     image: postgres:18-alpine
@@ -10,6 +24,8 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql
+    networks:
+      - ab-testing
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -24,11 +40,59 @@ services:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redisdata:/data
+    networks:
+      - ab-testing
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  migrate:
+    <<: *app
+    command: ["npx", "knex", "migrate:latest"]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    restart: unless-stopped
+    stop_grace_period: 15s
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  worker:
+    <<: *app
+    command: ["node", "src/worker.js"]
+    restart: unless-stopped
+    stop_grace_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+networks:
+  ab-testing:
+    name: ab-testing-network
+    driver: bridge
 
 volumes:
   pgdata:

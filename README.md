@@ -12,12 +12,26 @@ A/B testing service API built with Koa, Knex and PostgreSQL, with BullMQ (Redis)
 ```bash
 cp .env.example .env        # adjust if needed
 npm install
-docker compose up -d        # starts Postgres and Redis
+docker compose up -d postgres redis   # starts only Postgres and Redis
 npm run migrate
 npm run seed                # optional sample data
 npm run dev                 # http://localhost:3000
 npm run worker:dev          # in a second terminal: scheduled job worker
 ```
+
+## Docker
+
+`docker compose up` runs the full stack on the `ab-testing-network` bridge network: Postgres, Redis, a one-shot `migrate` service, the API and the worker. The API and worker use the same production image (built from `Dockerfile`, prod deps only), and start after migrations complete.
+
+```bash
+cp .env.example .env                                   # containers read it, with hosts overridden to postgres/redis
+docker compose up -d --build                           # API on http://localhost:${API_PORT:-3000}
+docker compose logs -f api worker
+docker compose run --rm migrate npx knex seed:run      # optional sample data
+docker compose up -d --build api worker                # rebuild after code changes
+```
+
+To run the API on the host with `npm run dev`, either `docker compose stop api worker` first or set `API_PORT` to a different port.
 
 ## Scripts
 
