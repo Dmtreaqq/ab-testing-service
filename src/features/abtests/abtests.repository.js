@@ -1,4 +1,3 @@
-const crypto = require('node:crypto');
 const db = require('../../db/knex');
 
 const TABLE = 'abtests';
@@ -107,7 +106,12 @@ async function assignVariant(abTestId, userId, variantsCount) {
     const existing = await findVariant(abTestId, userId, trx);
     if (existing !== null) return existing;
 
-    const variant = crypto.randomInt(1, variantsCount + 1);
+    const [{ assignments_count: seq }] = await trx(TABLE)
+      .where({ id: abTestId })
+      .increment('assignments_count', 1)
+      .returning('assignments_count');
+    const variant = ((seq - 1) % variantsCount) + 1;
+
     await trx(PARTICIPANTS_TABLE).insert({ abtest_id: abTestId, user_id: userId, variant });
     return variant;
   });
