@@ -6,8 +6,6 @@ const SOURCES = {
   query: (ctx) => ctx.query,
 };
 
-// Usage: validate({ body: schema, params: schema, query: schema })
-// Parsed values are exposed on ctx.state.validated.{body,params,query}.
 module.exports = function validate(schemas) {
   return async function validateMiddleware(ctx, next) {
     const validated = {};

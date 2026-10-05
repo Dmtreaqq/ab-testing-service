@@ -12,7 +12,6 @@ module.exports = async function errorHandler(ctx, next) {
       return;
     }
 
-    // Errors thrown by Koa/middleware (e.g. bodyparser on malformed JSON, router 405) carry a client status.
     if (err.status >= 400 && err.status < 500) {
       ctx.status = err.status;
       ctx.body = { message: err.expose ? err.message : STATUS_CODES[err.status] };
